@@ -7,6 +7,9 @@
             margin: 0;
             padding: 20px;
             font-family: Arial, sans-serif;
+        transform: scale(0.9); /* Set zoom to 90% */
+        transform-origin: top left; /* Ensure scaling starts from the top left corner */
+        background: lightgreen;
         }
     
         /* Card container */
@@ -116,10 +119,12 @@
             top: 0;
             left: 0;
             background-image: url('court.png');
+            background-size: 90%;
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
             transition: transform 0.3s ease;
+            border: 2px solid green; /* Add border around the court */
         }
     
         .court-background.portrait {
@@ -135,6 +140,10 @@
     
         .player {
             cursor: pointer;
+        }
+        .player circle,
+#ball {
+    transition: transform 0.5s ease; /* Applies smooth transitions */
         }
     
         /* Path toggle and radio group */
