@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+       
+        .card {
+            max-width: 1200px;
+            margin: 0 auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+       
+        .header {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+       
+        .title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+       
+        .instructions {
+            font-size: 0.875rem;
+            color: #6b7280;
+            font-weight: normal;
+        }
+       
+        .button {
+            padding: 0.5rem 1rem;
+            background: #e5e7eb;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+       
+        .button:hover {
+            background: #d1d5db;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .save-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .save-input {
+            padding: 0.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+
+        .saved-patterns {
+            padding: 0.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+       
+        .court-container {
+            position: relative;
+            width: 100%;
+            transition: padding-top 0.3s ease;
+        }
+
+        .court-container.landscape {
+            padding-top: 66.67%;
+        }
+
+        .court-container.portrait {
+            padding-top: 150%;
+        }
+       
+        .court-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+       
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .court-background {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-image: url('board.jpeg');
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: transform 0.3s ease;
+        }
+
+        .court-background.portrait {
+            transform: rotate(90deg);
+        }
+
+        .path-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .radio-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            cursor: pointer;
+        }
+       
+        .player {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="header">
+            <div class="title">
+                Tennis Plays - Simple
+                <span class="instructions">Click a player or the ball to move them</span>
+            </div>
+            <div class="button-group">
+                <button class="button" id="orientationToggle">Switch to Portrait</button>
+                <button class="button" onclick="clearBallPath()">Clear Path</button>
+                <div class="path-toggle">
+                    <span>Path:</span>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="pathVisibility" value="show" checked>
+                            Show
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="pathVisibility" value="hide">
+                            Hide
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="save-controls">
+                <input type="text" class="save-input" id="patternName" placeholder="Pattern name">
+                <button class="button" onclick="savePattern()">Save Pattern</button>
+                <select class="saved-patterns" id="savedPatterns" onchange="loadPattern()">
+                    <option value="">Load Saved Pattern</option>
+                </select>
+            </div>
+        </div>
+        <div class="court-container landscape">
+            <div class="court-background"></div>
+            <div class="court-wrapper">
+                <svg id="court" viewBox="0 0 600 400"></svg>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const svg = document.getElementById('court');
+        const ns = 'http://www.w3.org/2000/svg';
+        const courtContainer = document.querySelector('.court-container');
+        const courtBackground = document.querySelector('.court-background');
+        const orientationToggle = document.getElementById('orientationToggle');
+        const savedPatternsSelect = document.getElementById('savedPatterns');
+        const pathRadios = document.getElementsByName('pathVisibility');
+       
+        let players = [
+            { id: 'red1', x: 150, y: 100, color: '#ff4444', label: 'R1' },
+            { id: 'red2', x: 150, y: 200, color: '#ff4444', label: 'R2' },
+            { id: 'blue1', x: 450, y: 100, color: '#4444ff', label: 'B1' },
+            { id: 'blue2', x: 450, y: 200, color: '#4444ff', label: 'B2' },
+            { id: 'ball', x: 300, y: 150, color: '#FFD700', label: '●' }
+        ];
+       
+        let ballPath = [{ x: 300, y: 150 }];
+        let selectedPlayer = null;
+        let instructions = document.querySelector('.instructions');
+        let isLandscape = true;
+
+        // Path visibility toggle
+        pathRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                pathElement.style.display = e.target.value === 'show' ? 'block' : 'none';
+            });
+        });
+
+        // Constants for court dimensions
+        const LANDSCAPE = {
+            width: 600,
+            height: 400,
+            bounds: {
+                minX: 30,
+                maxX: 570,
+                minY: 20,
+                maxY: 380
+            }
+        };
+
+        const PORTRAIT = {
+            width: 400,
+            height: 600,
+            bounds: {
+                minX: 20,
+                maxX: 380,
+                minY: 30,
+                maxY: 570
+            }
+        };
+       
+        // Create ball path element
+        const pathElement = document.createElementNS(ns, 'path');
+        pathElement.setAttribute('fill', 'none');
+        pathElement.setAttribute('stroke', '#FFD700');
+        pathElement.setAttribute('stroke-width', '3');
+        pathElement.setAttribute('stroke-dasharray', '10,10');
+        pathElement.setAttribute('opacity', '0.6');
+        svg.appendChild(pathElement);
+
+        // Convert coordinates between landscape and portrait
+        function convertCoordinates(x, y, fromLandscape) {
+            if (fromLandscape) {
+                // Landscape to Portrait
+                const relativeX = (x - LANDSCAPE.bounds.minX) / (LANDSCAPE.width - 2 * LANDSCAPE.bounds.minX);
+                const relativeY = (y - LANDSCAPE.bounds.minY) / (LANDSCAPE.height - 2 * LANDSCAPE.bounds.minY);
+                return {
+                    x: PORTRAIT.bounds.minX + relativeX * (PORTRAIT.width - 2 * PORTRAIT.bounds.minX),
+                    y: PORTRAIT.bounds.minY + relativeY * (PORTRAIT.height - 2 * PORTRAIT.bounds.minY)
+                };
+            } else {
+                // Portrait to Landscape
+                const relativeX = (x - PORTRAIT.bounds.minX) / (PORTRAIT.width - 2 * PORTRAIT.bounds.minX);
+                const relativeY = (y - PORTRAIT.bounds.minY) / (PORTRAIT.height - 2 * PORTRAIT.bounds.minY);
+                return {
+                    x: LANDSCAPE.bounds.minX + relativeX * (LANDSCAPE.width - 2 * LANDSCAPE.bounds.minX),
+                    y: LANDSCAPE.bounds.minY + relativeY * (LANDSCAPE.height - 2 * LANDSCAPE.bounds.minY)
+                };
+            }
+        }
+
+        // Orientation toggle with position conversion
+        orientationToggle.addEventListener('click', () => {
+            isLandscape = !isLandscape;
+            courtContainer.classList.toggle('landscape');
+            courtContainer.classList.toggle('portrait');
+            courtBackground.classList.toggle('portrait');
+            
+            // Update viewBox
+            if (isLandscape) {
+                orientationToggle.textContent = 'Switch to Portrait';
+                svg.setAttribute('viewBox', `0 0 ${LANDSCAPE.width} ${LANDSCAPE.height}`);
+                
+                // Convert player positions from portrait to landscape
+                players = players.map(player => {
+                    const newPos = convertCoordinates(player.x, player.y, false);
+                    return { ...player, x: newPos.x, y: newPos.y };
+                });
+
+                // Convert ball path
+                ballPath = ballPath.map(point => convertCoordinates(point.x, point.y, false));
+            } else {
+                orientationToggle.textContent = 'Switch to Landscape';
+                svg.setAttribute('viewBox', `0 0 ${PORTRAIT.width} ${PORTRAIT.height}`);
+                
+                // Convert player positions from landscape to portrait
+                players = players.map(player => {
+                    const newPos = convertCoordinates(player.x, player.y, true);
+                    return { ...player, x: newPos.x, y: newPos.y };
+                });
+
+                // Convert ball path
+                ballPath = ballPath.map(point => convertCoordinates(point.x, point.y, true));
+            }
+            
+            renderPlayers();
+            updateBallPath();
+        });
+
+        // Rest of the functions remain the same...
+        // [Previous functions: constrainToBounds, savePattern, loadPattern, updateSavedPatternsList, 
+        // updateBallPath, createPlayer, clearBallPath, svg click handler, renderPlayers]
+
+        function constrainToBounds(x, y) {
+            const bounds = isLandscape ? LANDSCAPE.bounds : PORTRAIT.bounds;
+            return {
+                x: Math.min(Math.max(x, bounds.minX), bounds.maxX),
+                y: Math.min(Math.max(y, bounds.minY), bounds.maxY)
+            };
+        }
+
+        function savePattern() {
+            const patternName = document.getElementById('patternName').value;
+            if (!patternName) {
+                alert('Please enter a pattern name');
+                return;
+            }
+
+            const pattern = {
+                name: patternName,
+                players: JSON.parse(JSON.stringify(players)),
+                ballPath: JSON.parse(JSON.stringify(ballPath)),
+                isLandscape: isLandscape
+            };
+
+            let savedPatterns = JSON.parse(localStorage.getItem('tennisPatterns') || '[]');
+            const existingIndex = savedPatterns.findIndex(p => p.name === patternName);
+            if (existingIndex >= 0) {
+                savedPatterns[existingIndex] = pattern;
+            } else {
+                savedPatterns.push(pattern);
+            }
+
+            localStorage.setItem('tennisPatterns', JSON.stringify(savedPatterns));
+            updateSavedPatternsList();
+            document.getElementById('patternName').value = '';
+        }
+
+        function loadPattern() {
+            const selectedPattern = savedPatternsSelect.value;
+            if (!selectedPattern) return;
+
+            const savedPatterns = JSON.parse(localStorage.getItem('tennisPatterns') || '[]');
+            const pattern = savedPatterns.find(p => p.name === selectedPattern);
+            
+            if (pattern) {
+                // Convert coordinates if needed
+                if (pattern.isLandscape !== isLandscape) {
+                    pattern.players = pattern.players.map(player => {
+                        const newPos = convertCoordinates(player.x, player.y, pattern.isLandscape);
+                        return { ...player, x: newPos.x, y: newPos.y };
+                    });
+                    pattern.ballPath = pattern.ballPath.map(point => 
+                        convertCoordinates(point.x, point.y, pattern.isLandscape)
+                    );
+                }
+                
+                players = pattern.players;
+                ballPath = pattern.ballPath;
+                renderPlayers();
+                updateBallPath();
+            }
+        }
+
+        function updateSavedPatternsList() {
+            const savedPatterns = JSON.parse(localStorage.getItem('tennisPatterns') || '[]');
+            savedPatternsSelect.innerHTML = '<option value="">Load Saved Pattern</option>';
+            
+            savedPatterns.forEach(pattern => {
+                const option = document.createElement('option');
+                option.value = pattern.name;
+                option.textContent = pattern.name;
+                savedPatternsSelect.appendChild(option);
+            });
+        }
+       
+        function updateBallPath() {
+            const d = ballPath.map((point, index) =>
+                (index === 0 ? 'M' : 'L') + `${point.x},${point.y}`
+            ).join(' ');
+            pathElement.setAttribute('d', d);
+        }
+       
+        function createPlayer(player) {
+            const g = document.createElementNS(ns, 'g');
+            g.setAttribute('transform', `translate(${player.x},${player.y})`);
+            g.classList.add('player');
+           
+            const isBall = player.id === 'ball';
+           
+            const circle = document.createElementNS(ns, 'circle');
+            circle.setAttribute('r', isBall ? '8' : '12');
+            circle.setAttribute('fill', player.color);
+            circle.setAttribute('stroke', isBall ? '#FFA500' : 'white');
+            circle.setAttribute('stroke-width', isBall ? '1' : '2');
+           
+            g.appendChild(circle);
+           
+            if (!isBall) {
+                const text = document.createElementNS(ns, 'text');
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('dy', '4');
+                text.setAttribute('fill', 'white');
+                text.setAttribute('font-weight', 'bold');
+                text.setAttribute('font-size', '12');
+                text.textContent = player.label;
+
+            g.appendChild(text);
+            } else {
+                const highlight = document.createElementNS(ns, 'circle');
+                highlight.setAttribute('r', '4');
+                highlight.setAttribute('cx', '-2');
+                highlight.setAttribute('cy', '-2');
+                highlight.setAttribute('fill', 'white');
+                highlight.setAttribute('opacity', '0.5');
+               
+                const shadow = document.createElementNS(ns, 'circle');
+                shadow.setAttribute('r', '3');
+                shadow.setAttribute('cx', '1');
+                shadow.setAttribute('cy', '1');
+                shadow.setAttribute('fill', 'rgba(0,0,0,0.2)');
+               
+                g.appendChild(highlight);
+                g.appendChild(shadow);
+            }
+           
+            g.addEventListener('click', (e) => {
+                e.stopPropagation();
+                selectedPlayer = player.id;
+                instructions.textContent = player.id === 'ball'
+                    ? "Click anywhere to place the ball"
+                    : "Click anywhere to place the selected player";
+               
+                const indicator = document.createElementNS(ns, 'circle');
+                indicator.setAttribute('r', '15');
+                indicator.setAttribute('fill', 'none');
+                indicator.setAttribute('stroke', player.color);
+                indicator.setAttribute('stroke-width', '2');
+                indicator.setAttribute('opacity', '0.7');
+                g.insertBefore(indicator, g.firstChild);
+            });
+           
+            return g;
+        }
+       
+        function clearBallPath() {
+            const ballPos = players.find(p => p.id === 'ball');
+            ballPath = [{ x: ballPos.x, y: ballPos.y }];
+            updateBallPath();
+        }
+       
+        svg.addEventListener('click', (e) => {
+            if (!selectedPlayer) return;
+           
+            const rect = svg.getBoundingClientRect();
+            const viewBox = isLandscape ? LANDSCAPE : PORTRAIT;
+            const x = ((e.clientX - rect.left) * viewBox.width) / rect.width;
+            const y = ((e.clientY - rect.top) * viewBox.height) / rect.height;
+            
+            // Constrain the coordinates to the court bounds
+            const constrainedPos = constrainToBounds(x, y);
+           
+            players = players.map(player => {
+                if (player.id === selectedPlayer) {
+                    if (player.id === 'ball') {
+                        ballPath.push(constrainedPos);
+                        updateBallPath();
+                    }
+                    return { ...player, x: constrainedPos.x, y: constrainedPos.y };
+                }
+                return player;
+            });
+           
+            selectedPlayer = null;
+            instructions.textContent = "Click a player or the ball to move them";
+           
+            renderPlayers();
+        });
+
+        function renderPlayers() {
+            const existingPlayers = svg.querySelectorAll('.player');
+            existingPlayers.forEach(player => player.remove());
+           
+            players.forEach(player => {
+                svg.appendChild(createPlayer(player));
+            });
+        }
+
+        // Initial renders
+        renderPlayers();
+        updateBallPath();
+        updateSavedPatternsList();
+    </script>
+</body>
+</html>

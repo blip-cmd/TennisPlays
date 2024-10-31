@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+       
+        .card {
+            max-width: 1200px;
+            margin: 0 auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+       
+        .header {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+       
+        .title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+       
+        .instructions {
+            font-size: 0.875rem;
+            color: #6b7280;
+            font-weight: normal;
+        }
+       
+        .button {
+            padding: 0.5rem 1rem;
+            background: #e5e7eb;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+       
+        .button:hover {
+            background: #d1d5db;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .save-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .save-input {
+            padding: 0.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+
+        .saved-patterns {
+            padding: 0.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+       
+        .court-container {
+            position: relative;
+            width: 100%;
+            transition: padding-top 0.3s ease;
+            background: #2c5530;
+        }
+
+        .court-container.landscape {
+            padding-top: 66.67%;
+        }
+
+        .court-container.portrait {
+            padding-top: 150%;
+        }
+       
+        .court-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+       
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .court-background {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: transform 0.3s ease;
+            background-color: #2c5530;
+        }
+
+        .court-background.portrait {
+            transform: rotate(90deg);
+        }
+
+        .path-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .path-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .player-paths {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .player-path-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            cursor: pointer;
+        }
+
+        .player-path-toggle span {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .size-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .size-slider {
+            width: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="header">
+            <div class="title">
+                Tennis Plays - Adv
+                <span class="instructions">Click a player or the ball to move them</span>
+            </div>
+            <div class="path-controls">
+                <div class="button-group">
+                    <button class="button" id="orientationToggle">Switch to Portrait</button>
+                    <button class="button" onclick="clearAllPaths()">Clear All Paths</button>
+                </div>
+                <div class="player-paths">
+                    <label class="player-path-toggle">
+                        <input type="checkbox" data-player="ball" checked>
+                        <span style="background: #FFD700"></span>
+                        Ball
+                    </label>
+                    <label class="player-path-toggle">
+                        <input type="checkbox" data-player="red" checked>
+                        <span style="background: #ff4444"></span>
+                        Red Team
+                    </label>
+                    <label class="player-path-toggle">
+                        <input type="checkbox" data-player="blue" checked>
+                        <span style="background: #4444ff"></span>
+                        Blue Team
+                    </label>
+                </div>
+            </div>
+            <div class="size-controls">
+                <label>
+                    Size:
+                    <input type="range" class="size-slider" id="sizeSlider" min="0.5" max="2" step="0.1" value="1">
+                </label>
+            </div>
+            <div class="save-controls">
+                <input type="text" class="save-input" id="patternName" placeholder="Pattern name">
+                <button class="button" onclick="savePattern()">Save Pattern</button>
+                <select class="saved-patterns" id="savedPatterns" onchange="loadPattern()">
+                    <option value="">Load Saved Pattern</option>
+                </select>
+            </div>
+        </div>
+        <div class="court-container landscape">
+            <div class="court-background"></div>
+            <div class="court-wrapper">
+                <svg id="court" viewBox="0 0 600 400">
+                    <defs>
+                        <pattern id="courtPattern" patternUnits="userSpaceOnUse" width="600" height="400">
+                            <!-- Tennis court lines -->
+                            <rect width="600" height="400" fill="#2c5530"/>
+                            <path d="M50,20 L550,20 L550,380 L50,380 Z" stroke="white" stroke-width="2" fill="none"/>
+                            <path d="M50,200 L550,200" stroke="white" stroke-width="2"/>
+                            <path d="M300,20 L300,380" stroke="white" stroke-width="2"/>
+                            <!-- Service boxes -->
+                            <path d="M50,110 L175,110 L175,290 L50,290" stroke="white" stroke-width="2" fill="none"/>
+                            <path d="M425,110 L550,110 L550,290 L425,290" stroke="white" stroke-width="2" fill="none"/>
+                        </pattern>
+                    </defs>
+                    <rect width="600" height="400" fill="url(#courtPattern)"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const svg = document.getElementById('court');
+        const ns = 'http://www.w3.org/2000/svg';
+        const courtContainer = document.querySelector('.court-container');
+        const courtBackground = document.querySelector('.court-background');
+        const orientationToggle = document.getElementById('orientationToggle');
+        const savedPatternsSelect = document.getElementById('savedPatterns');
+        const sizeSlider = document.getElementById('sizeSlider');
+       
+        let players = [
+            { id: 'red1', x: 150, y: 100, color: '#ff4444', label: 'R1', path: [] },
+            { id: 'red2', x: 150, y: 200, color: '#ff4444', label: 'R2', path: [] },
+            { id: 'blue1', x: 450, y: 100, color: '#4444ff', label: 'B1', path: [] },
+            { id: 'blue2', x: 450, y: 200, color: '#4444ff', label: 'B2', path: [] },
+            { id: 'ball', x: 300, y: 150, color: '#FFD700', label: '●', path: [] }
+        ];
+       
+        let selectedPlayer = null;
+        let instructions = document.querySelector('.instructions');
+        let isLandscape = true;
+        let scale = 1;
+
+        // Path visibility controls
+        const pathToggles = document.querySelectorAll('.player-path-toggle input');
+        pathToggles.forEach(toggle => {
+            toggle.addEventListener('change', updatePathVisibility);
+        });
+
+        // Size control
+        sizeSlider.addEventListener('input', (e) => {
+            scale = parseFloat(e.target.value);
+            renderPlayers();
+        });
+
+        // Constants for court dimensions
+        const LANDSCAPE = {
+            width: 600,
+            height: 400,
+            bounds: {
+                minX: 50,
+                maxX: 550,
+                minY: 20,
+                maxY: 380
+            }
+        };
+
+        const PORTRAIT = {
+            width: 400,
+            height: 600,
+            bounds: {
+                minX: 20,
+                maxX: 380,
+                minY: 50,
+                maxY: 550
+            }
+        };
+
+        // Create path elements for each player
+        players.forEach(player => {
+            const pathElement = document.createElementNS(ns, 'path');
+            pathElement.setAttribute('fill', 'none');
+            pathElement.setAttribute('stroke', player.color);
+            pathElement.setAttribute('stroke-width', '3');
+            pathElement.setAttribute('stroke-dasharray', '10,10');
+            pathElement.setAttribute('opacity', '0.6');
+            pathElement.classList.add('player-path');
+            pathElement.dataset.player = player.id.startsWith('red') ? 'red' : 
+                                       player.id.startsWith('blue') ? 'blue' : 'ball';
+            svg.appendChild(pathElement);
+            player.path.push({ x: player.x, y: player.y });
+        });
+
+        function updatePathVisibility() {
+            pathToggles.forEach(toggle => {
+                const playerType = toggle.dataset.player;
+                const paths = svg.querySelectorAll(`.player-path[data-player="${playerType}"]`);
+                paths.forEach(path => {
+                    path.style.display = toggle.checked ? 'block' : 'none';
+                });
+            });
+        }
+
+        function convertCoordinates(x, y, fromLandscape) {
+            if (fromLandscape) {
+                const relativeX = (x - LANDSCAPE.bounds.minX) / (LANDSCAPE.width - 2 * LANDSCAPE.bounds.minX);
+                const relativeY = (y - LANDSCAPE.bounds.minY) / (LANDSCAPE.height - 2 * LANDSCAPE.bounds.minY);
+                return {
+                    x: PORTRAIT.bounds.minX + relativeX * (PORTRAIT.width - 2 * PORTRAIT.bounds.minX),
+                    y: PORTRAIT.bounds.minY + relativeY * (PORTRAIT.height - 2 * PORTRAIT.bounds.minY)
+                };
+            } else {
+                const relativeX = (x - PORTRAIT.bounds.minX) / (PORTRAIT.width - 2 * PORTRAIT.bounds.minX);
+                const relativeY = (y - PORTRAIT.bounds.minY) / (PORTRAIT.height - 2 * PORTRAIT.bounds.minY);
+                return {
+                    x: LANDSCAPE.bounds.minX + relativeX * (LANDSCAPE.width - 2 * LANDSCAPE.bounds.minX),
+                    y: LANDSCAPE.bounds.minY + relativeY * (LANDSCAPE.height - 2 * LANDSCAPE.bounds.minY)
+                };
+            }
+        }
+
+        orientationToggle.addEventListener('click', () => {
+            isLandscape = !isLandscape;
+            courtContainer.classList.toggle('landscape');
+            courtContainer.classList.toggle('portrait');
+            courtBackground.classList.toggle('portrait');
+            
+            if (isLandscape) {
+                orientationToggle.textContent = 'Switch to Portrait';
+                svg.setAttribute('viewBox', `0 0 ${LANDSCAPE.width} ${LANDSCAPE.height}`);
+                
+                players = players.map(player => {
+                    const newPos = convertCoordinates(player.x, player.y, false);
+                    player.path = player.path.map(point => convertCoordinates(point.x, point.y, false));
+                    return { ...player, x: newPos.x, y: newPos.y };
+                });
+            } else {
+                orientationToggle.textContent = 'Switch to Landscape';
+                svg.setAttribute('viewBox', `0 0 ${PORTRAIT.width} ${PORTRAIT.height}`);
+                
+                players = players.map(player => {
+                    const newPos = convertCoordinates(player.x, player.y, true);
+                    player.path = player.path.map(point => convertCoordinates(point.x, point.y, true));
+                    return { ...player, x: newPos.x, y: newPos.y };
+                });
+            }
+            
+            renderPlayers();
+            updatePaths();
+        });
+
+        function constrainToBounds(x, y) {
+            const bounds = isLandscape ? LANDSCAPE.bounds : PORTRAIT.bounds;
+            return {
+                x: Math.min(Math.max(x, bounds.minX), bounds.maxX),
+                y: Math.min(Math.max(y, bounds.minY), bounds.maxY)
+            };
+        }
+
+        function savePattern() {
+            const patternName = document.getElementById('patternName').value;
+            if (!patternName) {
+                alert('Please enter a pattern name');
+                return;
+            }
+
+            const pattern = {
+                name: patternName,
+                players: JSON.parse(JSON.stringify(players)),
+                isLandscape: isLandscape,
+                scale: scale
+            };
+
+            let savedPatterns = JSON.parse(localStorage.getItem('tennisPatterns') || '[]');
+            const existingIndex = savedPatterns.findIndex(p => p.name === patternName);
+            if (existingIndex >= 0) {
+                savedPatterns[existingIndex] = pattern;
+            } else {
+                savedPatterns.push(pattern);
+            }
+
+            localStorage.setItem('tennisPatterns', JSON.stringify(savedPatterns));
+            updateSavedPatternsList();
+            document.getElementById('patternName').value = '';
+        }
+
+        function loadPattern() {
+            const selectedPattern = savedPatternsSelect.value;
+            if (!selectedPattern) return;
+
+            const savedPatterns = JSON.parse(localStorage.getItem('tennisPatterns') || '[]');
+            const pattern = savedPatterns.find(p => p.name === selectedPattern);
+            
+            if (pattern) {
+                if (pattern.isLandscape !== isLandscape) {
+                    pattern.players = pattern.players.map(player => {
+                        const newPos = convertCoordinates(player.x, player.y, pattern.isLandscape);
+                        player.path = player.path.map(point => 
+                            convertCoordinates(point.x, point.y, pattern.isLandscape)
+                        );
+                        return { ...player, x: newPos.x, y: newPos.y };
+                    });
+                }
+                
+                players = pattern.players;
+                scale = pattern.scale || 1;
+                sizeSlider.value = scale;
+                renderPlayers();
+                updatePaths();
+            }
+        }
+
+        function updateSavedPatternsList() {
+            const savedPatterns = JSON.parse(localStorage.getItem('tennisPatterns') || '[]');
+            savedPatternsSelect.innerHTML = '<option value="">Load Saved Pattern</option>';
+            
+            savedPatterns.forEach(pattern => {
+                const option = document.createElement('option');
+                option.value = pattern.name;
+                option.textContent = pattern.name;
+                savedPatternsSelect.appendChild(option);
+            });
+        }
+       
+        function updatePaths() {
+            players.forEach(player => {
+                const pathElement = svg.querySelector(`.player-path[data-player="${player.id.startsWith('red') ? 'red' : 
+                                                    player.id.startsWith('blue') ? 'blue' : 'ball'}"]`);
+                const d = player.path.map((point, index) =>
+                    (index === 0 ? 'M' : 'L') + `${point.x},${point.y}`
+                ).join(' ');
+                pathElement.setAttribute('d', d);
+            });
+        }
+       
+        function createPlayer(player) {
+            const g = document.createElementNS(ns, 'g');
+            g.setAttribute('transform', `translate(${player.x},${player.y})`);
+            g.classList.add('player');
+           
+            const isBall = player.id === 'ball';
+            const baseSize = isBall ? 8 : 12;
+            const scaledSize = baseSize * scale;
+           
+            const circle = document.createElementNS(ns, 'circle');
+            circle.setAttribute('r', scaledSize);
+            circle.setAttribute('fill', player.color);
+            circle.setAttribute('stroke', isBall ? '#FFA500' : 'white');
+            circle.setAttribute('stroke-width', isBall ? 1 * scale : 2 * scale);
+           
+            g.appendChild(circle);
+           
+            if (!isBall) {
+                const text = document.createElementNS(ns, 'text');
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('dy', 4 * scale);
+                text.setAttribute('fill', 'white');
+                text.setAttribute('font-weight', 'bold');
+                text.setAttribute('font-size', 12 * scale);
+                text.textContent = player.label;
+                g.appendChild(text);
+            } else {
+                const highlight = document.createElementNS(ns, 'circle');
+                highlight.setAttribute('r', 4 * scale);
+                highlight.setAttribute('cx', -2 * scale);
+                highlight.setAttribute('cy', -2 * scale);
+                highlight.setAttribute('fill', 'white');
+                highlight.setAttribute('opacity', '0.5');
+               
+                const shadow = document.createElementNS(ns, 'circle');
+                shadow.setAttribute('r', 3 * scale);
+                shadow.setAttribute('cx', 1 * scale);
+                shadow.setAttribute('cy', 1 * scale);
+                shadow.setAttribute('fill', 'rgba(0,0,0,0.2)');
+               
+                g.appendChild(highlight);
+                g.appendChild(shadow);
+            }
+           
+            g.addEventListener('click', (e) => {
+                e.stopPropagation();
+                selectedPlayer = player.id;
+                instructions.textContent = player.id === 'ball'
+                    ? "Click anywhere to place the ball and track its path"
+                    : "Click anywhere to place the selected player and track their path";
+               
+                const indicator = document.createElementNS(ns, 'circle');
+                indicator.setAttribute('r', 15 * scale);
+                indicator.setAttribute('fill', 'none');
+                indicator.setAttribute('stroke', player.color);
+                indicator.setAttribute('stroke-width', 2 * scale);
+                indicator.setAttribute('opacity', '0.7');
+                g.insertBefore(indicator, g.firstChild);
+            });
+           
+            return g;
+        }
+       
+        function clearAllPaths() {
+            players.forEach(player => {
+                player.path = [{ x: player.x, y: player.y }];
+            });
+            updatePaths();
+        }
+       
+        svg.addEventListener('click', (e) => {
+            if (!selectedPlayer) return;
+           
+            const rect = svg.getBoundingClientRect();
+            const viewBox = isLandscape ? LANDSCAPE : PORTRAIT;
+            const x = ((e.clientX - rect.left) * viewBox.width) / rect.width;
+            const y = ((e.clientY - rect.top) * viewBox.height) / rect.height;
+            
+            const constrainedPos = constrainToBounds(x, y);
+           
+            players = players.map(player => {
+                if (player.id === selectedPlayer) {
+                    player.path.push(constrainedPos);
+                    return { ...player, x: constrainedPos.x, y: constrainedPos.y };
+                }
+                return player;
+            });
+           
+            selectedPlayer = null;
+            instructions.textContent = "Click a player or the ball to move them";
+           
+            renderPlayers();
+            updatePaths();
+        });
+
+        function renderPlayers() {
+            const existingPlayers = svg.querySelectorAll('.player');
+            existingPlayers.forEach(player => player.remove());
+           
+            players.forEach(player => {
+                svg.appendChild(createPlayer(player));
+            });
+        }
+
+        // Initial renders
+        renderPlayers();
+        updatePaths();
+        updateSavedPatternsList();
+        updatePathVisibility();
+    </script>
+</body>
+</html>
