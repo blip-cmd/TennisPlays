@@ -4,48 +4,90 @@
     <style>
         /* Global settings */
         body {
-        margin: 0;
-        padding: 20px;
-        font-family: Arial, sans-serif;
-        transform: scale(0.9); /* Set zoom to 90% */
-        transform-origin: top left; /* Ensure scaling starts from the top left corner */
-        background: lightgreen;
-    }
-        /* Card container */
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            transform: scale(0.9);
+            transform-origin: top left;
+            background: lightgreen;
+        }
+
+        /* Main layout */
         .card {
-            max-width: 1205px;
+            max-width: 1400px;
             margin: 0 auto;
             border: 1px solid #e5e7eb;
             border-radius: 8px;
-            background: white;
+            background: rgb(255, 255, 255);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-    
-        /* Header and title */
-        .header {
-            padding: 1rem;
-            border-bottom: 1px solid #e5e7eb;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
             gap: 1rem;
         }
-    
-        .title {
-            font-size: 1.25rem;
-            font-weight: bold;
+
+        /* Side panel */
+        .side-panel {
+            width: 250px;
+            padding: 1rem;
+            border-right: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* Pattern list */
+        .patterns-list {
+            height: 70%;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            padding: 0.5rem;
+        }
+
+        .pattern-radio {
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
         }
-    
+
+        .pattern-radio:hover {
+            background-color: #f3f4f6;
+        }
+
+        .pattern-radio input[type="radio"] {
+            margin: 0;
+        }
+
+        /* Controls section */
+        .controls-section {
+            height: 30%;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        /* Court container */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
         .instructions {
             font-size: 0.875rem;
             color: #6b7280;
             font-weight: normal;
         }
-    
+
         /* Button styles */
         .button {
             padding: 0.5rem 1rem;
@@ -55,54 +97,58 @@
             cursor: pointer;
             font-size: 0.875rem;
             transition: background 0.3s ease;
+            white-space: nowrap;
         }
-    
+
         .button:hover {
             background: #d1d5db;
         }
-    
-        .button-group {
-            display: flex;
-            gap: 0.5rem;
-            align-items: center;
-        }
-    
-        /* Save controls */
-        .save-controls {
-            display: flex;
-            gap: 0.5rem;
-            align-items: center;
-        }
-    
+
         .save-input {
             padding: 0.5rem;
             border: 1px solid #e5e7eb;
             border-radius: 4px;
             font-size: 0.875rem;
+            width: 100%;
+            box-sizing: border-box;
         }
-    
-        .saved-patterns {
-            padding: 0.5rem;
-            border: 1px solid #e5e7eb;
-            border-radius: 4px;
+
+        /* Path toggle */
+        .path-toggle {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
             font-size: 0.875rem;
         }
-    
+
+        .radio-group {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            cursor: pointer;
+        }
+
         /* Court container and background */
         .court-container {
             position: relative;
             width: 100%;
+            flex: 1;
             transition: padding-top 0.3s ease;
         }
-    
+
         .court-container.landscape {
             padding-top: 66.67%;
         }
-    
+
         .court-container.portrait {
             padding-top: 100%;
         }
-    
+
         .court-wrapper {
             position: absolute;
             top: 0;
@@ -110,72 +156,55 @@
             width: 100%;
             height: 100%;
         }
-    
+
         .court-background {
             width: 100%;
             height: 100%;
             position: absolute;
             top: 0;
             left: 0;
-            background-image: url('court.png');
-            background-size: 90%;
+            background-image: url('https://i.ibb.co/my8WCjb/court1.png');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
             transition: transform 0.3s ease;
-            border: 2px solid green; /* Add border around the court */
+            border: 2px solid green;
         }
-    
+
         .court-background.portrait {
             transform: rotate(90deg);
             background-size: cover;
         }
-    
+
         /* SVG and players */
         svg {
             width: 100%;
             height: 100%;
         }
-    
+
         .player {
             cursor: pointer;
         }
+
         .player circle,
-#ball {
-    transition: transform 0.5s ease; /* Applies smooth transitions */
-}
-    
-        /* Path toggle and radio group */
-        .path-toggle {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.875rem;
-        }
-    
-        .radio-group {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-    
-        .radio-label {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            cursor: pointer;
+        #ball {
+            transition: transform 0.5s ease;
         }
     </style>
-    
 </head>
 <body>
     <div class="card">
-        <div class="header">
-            <div class="title">
-                Tennis Plays - Simple
-                <span class="instructions" style="display: none">Click a player or the ball to move them</span>
+        <!-- Side Panel -->
+        <div class="side-panel">
+            <!-- Patterns List -->
+            <div class="patterns-list" id="patternsList">
+                <!-- Radio buttons will be dynamically added here -->
             </div>
-            <div class="button-group">
+
+            <!-- Controls Section -->
+            <div class="controls-section">
+                <input type="text" class="save-input" id="patternName" placeholder="Pattern name">
+                <button class="button" onclick="savePattern()">Save Pattern</button>
                 <button class="button" id="orientationToggle">Switch to Portrait</button>
                 <button class="button" onclick="clearBallPath()">Clear Path</button>
                 <div class="path-toggle">
@@ -192,18 +221,19 @@
                     </div>
                 </div>
             </div>
-            <div class="save-controls">
-                <input type="text" class="save-input" id="patternName" placeholder="Pattern name">
-                <button class="button" onclick="savePattern()">Save Pattern</button>
-                <select class="saved-patterns" id="savedPatterns" onchange="loadPattern()">
-                    <option value="">Load Saved Pattern</option>
-                </select>
-            </div>
         </div>
-        <div class="court-container landscape">
-            <div class="court-background"></div>
-            <div class="court-wrapper">
-                <svg id="court" viewBox="0 0 600 400"></svg>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="title">
+                Tennis Plays - Simple
+                <span class="instructions" style="display: none">Click a player or the ball to move them</span>
+            </div>
+            <div class="court-container landscape">
+                <div class="court-background"></div>
+                <div class="court-wrapper">
+                    <svg id="court" viewBox="0 0 600 400"></svg>
+                </div>
             </div>
         </div>
     </div>
@@ -214,7 +244,7 @@
         const courtContainer = document.querySelector('.court-container');
         const courtBackground = document.querySelector('.court-background');
         const orientationToggle = document.getElementById('orientationToggle');
-        const savedPatternsSelect = document.getElementById('savedPatterns');
+        const patternsList = document.getElementById('patternsList');
         const pathRadios = document.getElementsByName('pathVisibility');
        
         let players = [
@@ -230,14 +260,12 @@
         let instructions = document.querySelector('.instructions');
         let isLandscape = true;
 
-        // Path visibility toggle
         pathRadios.forEach(radio => {
             radio.addEventListener('change', (e) => {
                 pathElement.style.display = e.target.value === 'show' ? 'block' : 'none';
             });
         });
 
-        // Constants for court dimensions
         const LANDSCAPE = {
             width: 600,
             height: 400,
@@ -260,7 +288,6 @@
             }
         };
        
-        // Create ball path element
         const pathElement = document.createElementNS(ns, 'path');
         pathElement.setAttribute('fill', 'none');
         pathElement.setAttribute('stroke', '#FFD700');
@@ -269,10 +296,8 @@
         pathElement.setAttribute('opacity', '0.6');
         svg.appendChild(pathElement);
 
-        // Convert coordinates between landscape and portrait
         function convertCoordinates(x, y, fromLandscape) {
             if (fromLandscape) {
-                // Landscape to Portrait
                 const relativeX = (x - LANDSCAPE.bounds.minX) / (LANDSCAPE.width - 2 * LANDSCAPE.bounds.minX);
                 const relativeY = (y - LANDSCAPE.bounds.minY) / (LANDSCAPE.height - 2 * LANDSCAPE.bounds.minY);
                 return {
@@ -280,7 +305,6 @@
                     y: PORTRAIT.bounds.minY + relativeY * (PORTRAIT.height - 2 * PORTRAIT.bounds.minY)
                 };
             } else {
-                // Portrait to Landscape
                 const relativeX = (x - PORTRAIT.bounds.minX) / (PORTRAIT.width - 2 * PORTRAIT.bounds.minX);
                 const relativeY = (y - PORTRAIT.bounds.minY) / (PORTRAIT.height - 2 * PORTRAIT.bounds.minY);
                 return {
@@ -290,47 +314,33 @@
             }
         }
 
-        // Orientation toggle with position conversion
         orientationToggle.addEventListener('click', () => {
             isLandscape = !isLandscape;
             courtContainer.classList.toggle('landscape');
             courtContainer.classList.toggle('portrait');
             courtBackground.classList.toggle('portrait');
             
-            // Update viewBox
             if (isLandscape) {
                 orientationToggle.textContent = 'Switch to Portrait';
                 svg.setAttribute('viewBox', `0 0 ${LANDSCAPE.width} ${LANDSCAPE.height}`);
-                
-                // Convert player positions from portrait to landscape
                 players = players.map(player => {
                     const newPos = convertCoordinates(player.x, player.y, false);
                     return { ...player, x: newPos.x, y: newPos.y };
                 });
-
-                // Convert ball path
                 ballPath = ballPath.map(point => convertCoordinates(point.x, point.y, false));
             } else {
                 orientationToggle.textContent = 'Switch to Landscape';
                 svg.setAttribute('viewBox', `0 0 ${PORTRAIT.width} ${PORTRAIT.height}`);
-                
-                // Convert player positions from landscape to portrait
                 players = players.map(player => {
                     const newPos = convertCoordinates(player.x, player.y, true);
                     return { ...player, x: newPos.x, y: newPos.y };
                 });
-
-                // Convert ball path
                 ballPath = ballPath.map(point => convertCoordinates(point.x, point.y, true));
             }
             
             renderPlayers();
             updateBallPath();
         });
-
-        // Rest of the functions remain the same...
-        // [Previous functions: constrainToBounds, savePattern, loadPattern, updateSavedPatternsList, 
-        // updateBallPath, createPlayer, clearBallPath, svg click handler, renderPlayers]
 
         function constrainToBounds(x, y) {
             const bounds = isLandscape ? LANDSCAPE.bounds : PORTRAIT.bounds;
@@ -363,19 +373,17 @@
             }
 
             localStorage.setItem('tennisPatterns', JSON.stringify(savedPatterns));
-            updateSavedPatternsList();
+            updatePatternsRadioList();
             document.getElementById('patternName').value = '';
         }
 
-        function loadPattern() {
-            const selectedPattern = savedPatternsSelect.value;
-            if (!selectedPattern) return;
+        function loadPattern(patternName) {
+            if (!patternName) return;
 
             const savedPatterns = JSON.parse(localStorage.getItem('tennisPatterns') || '[]');
-            const pattern = savedPatterns.find(p => p.name === selectedPattern);
+            const pattern = savedPatterns.find(p => p.name === patternName);
             
             if (pattern) {
-                // Convert coordinates if needed
                 if (pattern.isLandscape !== isLandscape) {
                     pattern.players = pattern.players.map(player => {
                         const newPos = convertCoordinates(player.x, player.y, pattern.isLandscape);
@@ -393,52 +401,62 @@
             }
         }
 
-        function updateSavedPatternsList() {
+        function updatePatternsRadioList() {
             const savedPatterns = JSON.parse(localStorage.getItem('tennisPatterns') || '[]');
-            savedPatternsSelect.innerHTML = '<option value="">Load Saved Pattern</option>';
+            patternsList.innerHTML = '';
             
             savedPatterns.forEach(pattern => {
-                const option = document.createElement('option');
-                option.value = pattern.name;
-                option.textContent = pattern.name;
-                savedPatternsSelect.appendChild(option);
+                const label = document.createElement('label');
+                label.className = 'pattern-radio';
+                
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = 'patterns';
+                radio.value = pattern.name;
+                radio.addEventListener('change', () => loadPattern(pattern.name));
+                
+                const text = document.createTextNode(pattern.name);
+                
+                label.appendChild(radio);
+                label.appendChild(text);
+                patternsList.appendChild(label);
             });
         }
 
-function updateBallPath() {
-    const d = ballPath.map((point, index) =>
-        (index === 0 ? 'M' : 'L') + `${point.x},${point.y}`
-    ).join(' ');
+        function updateBallPath() {
+            const d = ballPath.map((point, index) =>
+                (index === 0 ? 'M' : 'L') + `${point.x},${point.y}`
+            ).join(' ');
 
-    pathElement.setAttribute('d', d);
-    animateBallAlongPath();
-}
-
-function animateBallAlongPath() {
-    const ball = players.find(p => p.id === 'ball');
-    const ballElement = document.getElementById(ball.id);
-
-    // Define movement animation by iterating over ball path coordinates
-    let currentStep = 0;
-
-    function step() {
-        if (currentStep < ballPath.length) {
-            const point = ballPath[currentStep];
-            ballElement.setAttribute(
-                'transform', 
-                `translate(${point.x}, ${point.y})`
-            );
-            currentStep++;
-            requestAnimationFrame(step); // Proceed to the next step
+            pathElement.setAttribute('d', d);
+            animateBallAlongPath();
         }
-    }
-    requestAnimationFrame(step); // Start animation
-}
+
+        function animateBallAlongPath() {
+            const ball = players.find(p => p.id === 'ball');
+            const ballElement = document.getElementById(ball.id);
+
+            let currentStep = 0;
+
+            function step() {
+                if (currentStep < ballPath.length) {
+                    const point = ballPath[currentStep];
+                    ballElement.setAttribute(
+                        'transform', 
+                        `translate(${point.x}, ${point.y})`
+                    );
+                    currentStep++;
+                    requestAnimationFrame(step);
+                }
+            }
+            requestAnimationFrame(step);
+        }
 
         function createPlayer(player) {
             const g = document.createElementNS(ns, 'g');
             g.setAttribute('transform', `translate(${player.x},${player.y})`);
             g.classList.add('player');
+            g.id = player.id;
            
             const isBall = player.id === 'ball';
            
@@ -458,8 +476,7 @@ function animateBallAlongPath() {
                 text.setAttribute('font-weight', 'bold');
                 text.setAttribute('font-size', '12');
                 text.textContent = player.label;
-
-            g.appendChild(text);
+                g.appendChild(text);
             } else {
                 const highlight = document.createElementNS(ns, 'circle');
                 highlight.setAttribute('r', '4');
@@ -511,7 +528,6 @@ function animateBallAlongPath() {
             const x = ((e.clientX - rect.left) * viewBox.width) / rect.width;
             const y = ((e.clientY - rect.top) * viewBox.height) / rect.height;
             
-            // Constrain the coordinates to the court bounds
             const constrainedPos = constrainToBounds(x, y);
            
             players = players.map(player => {
@@ -532,22 +548,20 @@ function animateBallAlongPath() {
         });
 
         function renderPlayers() {
-    const existingPlayers = svg.querySelectorAll('.player');
-    existingPlayers.forEach(player => player.remove());
+            const existingPlayers = svg.querySelectorAll('.player');
+            existingPlayers.forEach(player => player.remove());
 
-    players.forEach(player => {
-        const playerElement = createPlayer(player);
-        // Apply the position as a transform to enable transition animation
-        playerElement.setAttribute('transform', `translate(${player.x},${player.y})`);
-        svg.appendChild(playerElement);
-    });
-}
-
+            players.forEach(player => {
+                const playerElement = createPlayer(player);
+                playerElement.setAttribute('transform', `translate(${player.x},${player.y})`);
+                svg.appendChild(playerElement);
+            });
+        }
 
         // Initial renders
         renderPlayers();
         updateBallPath();
-        updateSavedPatternsList();
+        updatePatternsRadioList();
     </script>
 </body>
-</html> 
+</html>
